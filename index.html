@@ -1333,6 +1333,9 @@
         let ucapanCurrentPage = 1;
         const ucapanPerPage = 5;
 
+        let isMusicPlayingBeforeHide = false;
+        let isInvitationOpened = false;
+
         function escapeHTML(str) {
             if (!str) return '';
             return String(str).replace(/[&<>'"]/g, 
@@ -1374,6 +1377,7 @@
             if (!cover || !content) return;
 
             cover.classList.add('slide-down'); 
+            isInvitationOpened = true;
             
             if (audio && musicBtn) {
                 audio.play().then(() => {
@@ -1397,6 +1401,30 @@
                 initSwipeHide();
             }, 1200);
         }
+
+        /* --- FITUR UNTUK OTOMATIS PAUSE/RESUME SAAT KELUAR & MASUK CHROME --- */
+        document.addEventListener('visibilitychange', () => {
+            if (!audio || !isInvitationOpened) return;
+
+            const iconSvg = document.getElementById('music-icon-svg');
+
+            if (document.hidden) {
+                // Ketika user menekan home/minimize Chrome
+                isMusicPlayingBeforeHide = !audio.paused;
+                if (!audio.paused) {
+                    audio.pause();
+                    if (musicBtn) musicBtn.classList.remove('music-rotating');
+                }
+            } else {
+                // Ketika user kembali membuka Chrome/tab undangan
+                if (isMusicPlayingBeforeHide) {
+                    audio.play().then(() => {
+                        if (musicBtn) musicBtn.classList.add('music-rotating');
+                        if (iconSvg) iconSvg.innerHTML = `<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>`;
+                    }).catch(err => console.log("Gagal memutar ulang musik."));
+                }
+            }
+        });
 
         function initSwipeHide() {
             const swipeInd = document.getElementById('swipe-indicator');
